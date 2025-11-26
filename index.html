@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>131조 회계 장부</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .report-btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: #667eea;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+
+        .report-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .month-selector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .month-selector button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .month-selector button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .month-selector span {
+            font-size: 24px;
+            font-weight: bold;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            padding: 25px;
+            background: #f8f9fa;
+        }
+
+        .summary-item {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .summary-item .label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .summary-item .amount {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .summary-item.carry-forward .amount {
+            color: #6c757d;
+        }
+
+        .summary-item.income .amount {
+            color: #28a745;
+        }
+
+        .summary-item.expense .amount {
+            color: #dc3545;
+        }
+
+        .summary-item.balance .amount {
+            color: #667eea;
+        }
+
+        .content {
+            padding: 25px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .section-header h2 {
+            font-size: 20px;
+            color: #333;
+        }
+
+        .add-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .add-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .transaction-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .transaction-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .transaction-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .transaction-info {
+            flex: 1;
+        }
+
+        .transaction-date {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .transaction-description {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .transaction-amount {
+            font-size: 18px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .transaction-amount.income {
+            color: #28a745;
+        }
+
+        .transaction-amount.expense {
+            color: #dc3545;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #999;
+            padding: 30px;
+            font-size: 14px;
+        }
+
+        /* 이미지 미리보기 모달 */
+        .image-preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .image-preview-modal.active {
+            display: flex;
+        }
+
+        .image-preview-content {
+            max-width: 90%;
+            max-height: 90%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 10px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .preview-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .preview-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .preview-btn.save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .preview-btn.save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .preview-btn.close {
+            background: #6c757d;
+            color: white;
+        }
+
+        .preview-btn.close:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .preview-image {
+                max-height: 60vh;
+            }
+
+            .preview-btn {
+                padding: 15px 25px;
+                font-size: 18px;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+
+        .btn-submit {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-submit:hover {
+            background: #5568d3;
+        }
+
+        /* 보고서 모달 스타일 */
+        .report-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .report-modal.active {
+            display: block;
+        }
+
+        .report-content {
+            background: white;
+            max-width: 900px;
+            margin: 0 auto;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .report-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .report-header h1 {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .report-header .report-period {
+            font-size: 20px;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .report-summary {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .report-summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            font-size: 16px;
+        }
+
+        .report-summary-row.total {
+            border-top: 2px solid #dee2e6;
+            margin-top: 10px;
+            padding-top: 15px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .report-summary-row.balance {
+            background: #667eea;
+            color: white;
+            margin: 15px -25px -25px -25px;
+            padding: 20px 25px;
+            border-radius: 0 0 15px 15px;
+            font-size: 20px;
+        }
+
+        .report-summary-label {
+            color: #666;
+        }
+
+        .report-summary-row.balance .report-summary-label {
+            color: white;
+        }
+
+        .report-summary-amount {
+            font-weight: bold;
+        }
+
+        .report-summary-amount.income {
+            color: #28a745;
+        }
+
+        .report-summary-amount.expense {
+            color: #dc3545;
+        }
+
+        .report-section {
+            margin-bottom: 30px;
+        }
+
+        .report-section-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .report-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-size: 14px;
+            color: #666;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .report-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 15px;
+        }
+
+        .report-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .report-table .date-col {
+            width: 100px;
+        }
+
+        .report-table .amount-col {
+            width: 120px;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .report-table .amount-col.income {
+            color: #28a745;
+        }
+
+        .report-table .amount-col.expense {
+            color: #dc3545;
+        }
+
+        .report-table tfoot td {
+            padding-top: 15px;
+            border-top: 2px solid #dee2e6;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .report-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .report-buttons button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .print-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .print-btn:hover {
+            background: #5568d3;
+        }
+
+        .close-report-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .close-report-btn:hover {
+            background: #5a6268;
+        }
+
+        .empty-report {
+            text-align: center;
+            color: #999;
+            padding: 30px;
+        }
+
+        .connection-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 999;
+        }
+
+        .connection-status.connected {
+            color: #28a745;
+        }
+
+        .connection-status.disconnected {
+            color: #dc3545;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #28a745;
+        }
+
+        .status-dot.disconnected {
+            background: #dc3545;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .month-selector span {
+                font-size: 20px;
+                min-width: 120px;
+            }
+
+            .summary {
+                grid-template-columns: repeat(2, 1fr);
+                padding: 15px;
+                gap: 10px;
+            }
+
+            .content {
+                padding: 15px;
+            }
+
+            .connection-status {
+                bottom: 10px;
+                right: 10px;
+                font-size: 12px;
+                padding: 8px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+        <div class="container">
+            <div class="header">
+                <h1>📒 131조 회계 장부</h1>
+                <button class="report-btn" onclick="openReport()">📄 월말 보고서</button>
+                <div class="month-selector">
+                    <button onclick="changeMonth(-1)">◀</button>
+                    <span id="currentMonth"></span>
+                    <button onclick="changeMonth(1)">▶</button>
+                </div>
+            </div>
+
+            <div class="summary">
+                <div class="summary-item carry-forward">
+                    <div class="label">전월 이월</div>
+                    <div class="amount" id="carryForward">0원</div>
+                </div>
+                <div class="summary-item income">
+                    <div class="label">수입</div>
+                    <div class="amount" id="totalIncome">0원</div>
+                </div>
+                <div class="summary-item expense">
+                    <div class="label">지출</div>
+                    <div class="amount" id="totalExpense">0원</div>
+                </div>
+                <div class="summary-item balance">
+                    <div class="label">잔액</div>
+                    <div class="amount" id="balance">0원</div>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="section">
+                    <div class="section-header">
+                        <h2>💰 수입 내역</h2>
+                        <button class="add-btn" onclick="openModal('income')">+ 추가</button>
+                    </div>
+                    <div class="transaction-list" id="incomeList">
+                        <div class="empty-message">등록된 수입 내역이 없습니다.</div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <h2>💸 지출 내역</h2>
+                        <button class="add-btn" onclick="openModal('expense')">+ 추가</button>
+                    </div>
+                    <div class="transaction-list" id="expenseList">
+                        <div class="empty-message">등록된 지출 내역이 없습니다.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="connection-status" id="connectionStatus">
+            <span class="status-dot"></span>
+            <span class="status-text">연결 중...</span>
+        </div>
+    </div>
+
+    <div class="modal" id="transactionModal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalTitle">항목 추가</div>
+            <div class="form-group">
+                <label>날짜</label>
+                <input type="date" id="transactionDate" required>
+            </div>
+            <div class="form-group">
+                <label>내역</label>
+                <input type="text" id="transactionDescription" placeholder="예: 헌금, 조회비 등" required>
+            </div>
+            <div class="form-group">
+                <label>금액 (원)</label>
+                <input type="number" id="transactionAmount" placeholder="10000" required>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal()">취소</button>
+                <button class="btn-submit" onclick="saveTransaction()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="report-modal" id="reportModal">
+        <div class="report-content">
+            <div class="report-header">
+                <h1>📋 131조 회계 보고서</h1>
+                <div class="report-period" id="reportPeriod"></div>
+            </div>
+
+            <div class="report-summary">
+                <div class="report-summary-row">
+                    <span class="report-summary-label">전월 이월</span>
+                    <span class="report-summary-amount" id="reportCarryForward">0원</span>
+                </div>
+                <div class="report-summary-row total">
+                    <span class="report-summary-label">당월 수입</span>
+                    <span class="report-summary-amount income" id="reportIncome">0원</span>
+                </div>
+                <div class="report-summary-row">
+                    <span class="report-summary-label">당월 지출</span>
+                    <span class="report-summary-amount expense" id="reportExpense">0원</span>
+                </div>
+                <div class="report-summary-row balance">
+                    <span class="report-summary-label">당월 잔액</span>
+                    <span class="report-summary-amount" id="reportBalance">0원</span>
+                </div>
+            </div>
+
+            <div class="report-section">
+                <div class="report-section-title">💰 수입 내역</div>
+                <div id="reportIncomeSection"></div>
+            </div>
+
+            <div class="report-section">
+                <div class="report-section-title">💸 지출 내역</div>
+                <div id="reportExpenseSection"></div>
+            </div>
+
+            <div class="report-buttons">
+                <button class="print-btn" onclick="saveAsImage()">💾 이미지 저장</button>
+                <button class="close-report-btn" onclick="closeReport()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 이미지 미리보기 모달 -->
+    <div class="image-preview-modal" id="imagePreviewModal">
+        <div class="image-preview-content">
+            <img id="previewImage" class="preview-image" alt="보고서 미리보기">
+            <div class="preview-buttons">
+                <button class="preview-btn save" onclick="downloadImage()">💾 저장하기</button>
+                <button class="preview-btn close" onclick="closePreview()">✕ 닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { 
+            getFirestore, 
+            collection, 
+            doc, 
+            setDoc, 
+            getDoc,
+            getDocs,
+            deleteDoc,
+            onSnapshot,
+            query,
+            orderBy
+        } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // ========================================
+        // 🔥 여기에 Firebase 설정 정보를 입력하세요
+        // ========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD7aka_VgPdW6rKYIGeCTA_owMRfiG2Bpc",
+            authDomain: "group-79bf8.firebaseapp.com",
+            projectId: "group-79bf8",
+            storageBucket: "group-79bf8.firebasestorage.app",
+            messagingSenderId: "922208562382",
+            appId: "1:922208562382:web:74aa2605f9bee34551b49f",
+            measurementId: "G-1562SND4XP"
+        };
+
+        // ========================================
+
+        let db;
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth() + 1;
+        let currentType = 'income';
+        let unsubscribe = null;
+
+        // Firebase 초기화
+        function initFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                
+                updateConnectionStatus(true);
+                init();
+                return true;
+            } catch (error) {
+                console.error('Firebase 초기화 실패:', error);
+                alert('Firebase 설정이 올바르지 않습니다. 코드에서 firebaseConfig를 확인해주세요.');
+                return false;
+            }
+        }
+
+        // 연결 상태 업데이트
+        function updateConnectionStatus(connected) {
+            const status = document.getElementById('connectionStatus');
+            const dot = status.querySelector('.status-dot');
+            const text = status.querySelector('.status-text');
+            
+            if (connected) {
+                status.className = 'connection-status connected';
+                dot.className = 'status-dot connected';
+                text.textContent = 'Firebase 연결됨';
+            } else {
+                status.className = 'connection-status disconnected';
+                dot.className = 'status-dot disconnected';
+                text.textContent = '연결 끊김';
+            }
+        }
+
+        // 초기화
+        async function init() {
+            updateDisplay();
+            loadMonthData();
+        }
+
+        // 월 키 생성
+        function getMonthKey(year, month) {
+            return `${year}-${String(month).padStart(2, '0')}`;
+        }
+
+        // 월별 데이터 로드 (실시간)
+        function loadMonthData() {
+            // 이전 리스너 해제
+            if (unsubscribe) {
+                unsubscribe();
+            }
+
+            const monthKey = getMonthKey(currentYear, currentMonth);
+            const monthRef = doc(db, 'accounting', monthKey);
+            
+            // 실시간 리스너 설정
+            unsubscribe = onSnapshot(monthRef, (doc) => {
+                if (doc.exists()) {
+                    const data = doc.data();
+                    updateLists(data.income || [], data.expense || []);
+                    updateSummary(data.income || [], data.expense || []);
+                } else {
+                    updateLists([], []);
+                    updateSummary([], []);
+                }
+                updateConnectionStatus(true);
+            }, (error) => {
+                console.error('데이터 로드 실패:', error);
+                updateConnectionStatus(false);
+            });
+        }
+
+        // 리스트 업데이트
+        function updateLists(income, expense) {
+            updateTransactionList('income', income);
+            updateTransactionList('expense', expense);
+        }
+
+        // 요약 정보 업데이트
+        async function updateSummary(income, expense) {
+            const carryForward = await getPreviousBalance();
+            const totalIncome = income.reduce((sum, item) => sum + item.amount, 0);
+            const totalExpense = expense.reduce((sum, item) => sum + item.amount, 0);
+            const balance = carryForward + totalIncome - totalExpense;
+
+            document.getElementById('carryForward').textContent = formatMoney(carryForward);
+            document.getElementById('totalIncome').textContent = formatMoney(totalIncome);
+            document.getElementById('totalExpense').textContent = formatMoney(totalExpense);
+            document.getElementById('balance').textContent = formatMoney(balance);
+        }
+
+        // 전월 잔액 계산
+        async function getPreviousBalance() {
+            let year = currentYear;
+            let month = currentMonth - 1;
+            if (month < 1) {
+                month = 12;
+                year -= 1;
+            }
+            
+            const key = getMonthKey(year, month);
+            const monthRef = doc(db, 'accounting', key);
+            
+            try {
+                const docSnap = await getDoc(monthRef);
+                if (!docSnap.exists()) {
+                    return 0;
+                }
+
+                const data = docSnap.data();
+                const prevIncome = (data.income || []).reduce((sum, item) => sum + item.amount, 0);
+                const prevExpense = (data.expense || []).reduce((sum, item) => sum + item.amount, 0);
+                const prevCarryForward = await getPreviousBalanceRecursive(year, month);
+                
+                return prevCarryForward + prevIncome - prevExpense;
+            } catch (error) {
+                console.error('전월 잔액 조회 실패:', error);
+                return 0;
+            }
+        }
+
+        async function getPreviousBalanceRecursive(year, month) {
+            if (month < 1) {
+                month = 12;
+                year -= 1;
+            }
+            
+            const key = getMonthKey(year, month - 1);
+            const monthRef = doc(db, 'accounting', key);
+            
+            try {
+                const docSnap = await getDoc(monthRef);
+                if (!docSnap.exists()) {
+                    return 0;
+                }
+
+                const data = docSnap.data();
+                const income = (data.income || []).reduce((sum, item) => sum + item.amount, 0);
+                const expense = (data.expense || []).reduce((sum, item) => sum + item.amount, 0);
+                
+                return income - expense;
+            } catch (error) {
+                return 0;
+            }
+        }
+
+        // 화면 업데이트
+        function updateDisplay() {
+            document.getElementById('currentMonth').textContent = 
+                `${currentYear}년 ${currentMonth}월`;
+        }
+
+        // 거래 목록 업데이트
+        function updateTransactionList(type, transactions) {
+            const listId = type === 'income' ? 'incomeList' : 'expenseList';
+            const list = document.getElementById(listId);
+            
+            if (transactions.length === 0) {
+                list.innerHTML = `<div class="empty-message">등록된 ${type === 'income' ? '수입' : '지출'} 내역이 없습니다.</div>`;
+                return;
+            }
+
+            // 날짜순 정렬
+            const sorted = [...transactions].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            list.innerHTML = sorted.map((item, index) => `
+                <div class="transaction-item">
+                    <div class="transaction-info">
+                        <div class="transaction-date">${formatDate(item.date)}</div>
+                        <div class="transaction-description">${item.description}</div>
+                    </div>
+                    <div class="transaction-amount ${type}">${formatMoney(item.amount)}</div>
+                    <button class="delete-btn" onclick="window.deleteTransaction('${type}', '${item.id}')">삭제</button>
+                </div>
+            `).join('');
+        }
+
+        // 금액 포맷
+        function formatMoney(amount) {
+            return amount.toLocaleString('ko-KR') + '원';
+        }
+
+        // 날짜 포맷
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+        }
+
+        // 전체 날짜 포맷 (보고서용)
+        function formatFullDate(dateString) {
+            const date = new Date(dateString);
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${month}/${day}`;
+        }
+
+        // 월 변경
+        window.changeMonth = function(delta) {
+            currentMonth += delta;
+            if (currentMonth > 12) {
+                currentMonth = 1;
+                currentYear += 1;
+            } else if (currentMonth < 1) {
+                currentMonth = 12;
+                currentYear -= 1;
+            }
+            updateDisplay();
+            loadMonthData();
+        }
+
+        // 모달 열기
+        window.openModal = function(type) {
+            currentType = type;
+            document.getElementById('modalTitle').textContent = 
+                type === 'income' ? '💰 수입 추가' : '💸 지출 추가';
+            
+            const today = new Date();
+            const year = currentYear;
+            const month = String(currentMonth).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            document.getElementById('transactionDate').value = `${year}-${month}-${day}`;
+            
+            document.getElementById('transactionDescription').value = '';
+            document.getElementById('transactionAmount').value = '';
+            document.getElementById('transactionModal').classList.add('active');
+        }
+
+        // 모달 닫기
+        window.closeModal = function() {
+            document.getElementById('transactionModal').classList.remove('active');
+        }
+
+        // 거래 저장
+        window.saveTransaction = async function() {
+            const date = document.getElementById('transactionDate').value;
+            const description = document.getElementById('transactionDescription').value;
+            const amount = parseInt(document.getElementById('transactionAmount').value);
+
+            if (!date || !description || !amount || amount <= 0) {
+                alert('모든 항목을 올바르게 입력해주세요.');
+                return;
+            }
+
+            try {
+                const monthKey = getMonthKey(currentYear, currentMonth);
+                const monthRef = doc(db, 'accounting', monthKey);
+                const docSnap = await getDoc(monthRef);
+                
+                let data = { income: [], expense: [] };
+                if (docSnap.exists()) {
+                    data = docSnap.data();
+                }
+
+                const newItem = {
+                    id: Date.now().toString(),
+                    date: date,
+                    description: description,
+                    amount: amount
+                };
+
+                data[currentType].push(newItem);
+                
+                await setDoc(monthRef, data);
+                closeModal();
+            } catch (error) {
+                console.error('저장 실패:', error);
+                alert('저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 거래 삭제
+        window.deleteTransaction = async function(type, id) {
+            if (!confirm('정말 삭제하시겠습니까?')) {
+                return;
+            }
+
+            try {
+                const monthKey = getMonthKey(currentYear, currentMonth);
+                const monthRef = doc(db, 'accounting', monthKey);
+                const docSnap = await getDoc(monthRef);
+                
+                if (!docSnap.exists()) return;
+
+                const data = docSnap.data();
+                data[type] = data[type].filter(item => item.id !== id);
+                
+                await setDoc(monthRef, data);
+            } catch (error) {
+                console.error('삭제 실패:', error);
+                alert('삭제 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 보고서 열기
+        window.openReport = async function() {
+            const monthKey = getMonthKey(currentYear, currentMonth);
+            const monthRef = doc(db, 'accounting', monthKey);
+            
+            try {
+                const docSnap = await getDoc(monthRef);
+                const monthData = docSnap.exists() ? docSnap.data() : { income: [], expense: [] };
+                
+                const carryForward = await getPreviousBalance();
+                const totalIncome = (monthData.income || []).reduce((sum, item) => sum + item.amount, 0);
+                const totalExpense = (monthData.expense || []).reduce((sum, item) => sum + item.amount, 0);
+                const balance = carryForward + totalIncome - totalExpense;
+
+                document.getElementById('reportPeriod').textContent = 
+                    `${currentYear}년 ${currentMonth}월`;
+
+                document.getElementById('reportCarryForward').textContent = formatMoney(carryForward);
+                document.getElementById('reportIncome').textContent = formatMoney(totalIncome);
+                document.getElementById('reportExpense').textContent = formatMoney(totalExpense);
+                document.getElementById('reportBalance').textContent = formatMoney(balance);
+
+                // 수입 내역
+                const incomeSection = document.getElementById('reportIncomeSection');
+                if (!monthData.income || monthData.income.length === 0) {
+                    incomeSection.innerHTML = '<div class="empty-report">수입 내역이 없습니다.</div>';
+                } else {
+                    const sortedIncome = [...monthData.income].sort((a, b) => new Date(a.date) - new Date(b.date));
+                    incomeSection.innerHTML = `
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th class="date-col">날짜</th>
+                                    <th>내역</th>
+                                    <th class="amount-col">금액</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sortedIncome.map(item => `
+                                    <tr>
+                                        <td class="date-col">${formatFullDate(item.date)}</td>
+                                        <td>${item.description}</td>
+                                        <td class="amount-col income">${formatMoney(item.amount)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2">합계</td>
+                                    <td class="amount-col income">${formatMoney(totalIncome)}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    `;
+                }
+
+                // 지출 내역
+                const expenseSection = document.getElementById('reportExpenseSection');
+                if (!monthData.expense || monthData.expense.length === 0) {
+                    expenseSection.innerHTML = '<div class="empty-report">지출 내역이 없습니다.</div>';
+                } else {
+                    const sortedExpense = [...monthData.expense].sort((a, b) => new Date(a.date) - new Date(b.date));
+                    expenseSection.innerHTML = `
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th class="date-col">날짜</th>
+                                    <th>내역</th>
+                                    <th class="amount-col">금액</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sortedExpense.map(item => `
+                                    <tr>
+                                        <td class="date-col">${formatFullDate(item.date)}</td>
+                                        <td>${item.description}</td>
+                                        <td class="amount-col expense">${formatMoney(item.amount)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2">합계</td>
+                                    <td class="amount-col expense">${formatMoney(totalExpense)}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    `;
+                }
+
+                document.getElementById('reportModal').classList.add('active');
+            } catch (error) {
+                console.error('보고서 생성 실패:', error);
+                alert('보고서를 불러오는 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 보고서 닫기
+        window.closeReport = function() {
+            document.getElementById('reportModal').classList.remove('active');
+        }
+
+        // 이미지로 저장 (미리보기 표시)
+        let currentImageData = null;
+        
+        window.saveAsImage = async function() {
+            try {
+                // html2canvas 동적 로드
+                if (typeof html2canvas === 'undefined') {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                    document.head.appendChild(script);
+                    
+                    await new Promise((resolve, reject) => {
+                        script.onload = resolve;
+                        script.onerror = reject;
+                    });
+                }
+
+                const reportContent = document.querySelector('.report-content');
+                const buttons = document.querySelector('.report-buttons');
+                
+                buttons.style.display = 'none';
+                
+                const canvas = await html2canvas(reportContent, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    logging: false,
+                    useCORS: true
+                });
+                
+                currentImageData = canvas.toDataURL('image/png');
+                
+                // 미리보기 모달에 이미지 표시
+                document.getElementById('previewImage').src = currentImageData;
+                document.getElementById('imagePreviewModal').classList.add('active');
+                
+                buttons.style.display = 'flex';
+            } catch (error) {
+                alert('이미지 생성 중 오류가 발생했습니다.');
+                console.error(error);
+                buttons.style.display = 'flex';
+            }
+        }
+
+        // 이미지 다운로드
+        window.downloadImage = function() {
+            if (!currentImageData) {
+                alert('이미지 데이터가 없습니다.');
+                return;
+            }
+
+            try {
+                // 모바일 감지
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                
+                if (isMobile && navigator.share && navigator.canShare) {
+                    // 모바일에서 Web Share API 지원 시
+                    fetch(currentImageData)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            const file = new File([blob], `131조회계보고서_${currentYear}년${currentMonth}월.png`, { type: 'image/png' });
+                            if (navigator.canShare({ files: [file] })) {
+                                navigator.share({
+                                    files: [file],
+                                    title: '131조 회계 보고서',
+                                    text: `${currentYear}년 ${currentMonth}월 131조 회계 보고서`
+                                }).catch(err => {
+                                    // 공유 취소 시 일반 다운로드
+                                    if (err.name !== 'AbortError') {
+                                        downloadDirectly();
+                                    }
+                                });
+                            } else {
+                                downloadDirectly();
+                            }
+                        })
+                        .catch(() => downloadDirectly());
+                } else {
+                    // 데스크톱이거나 Web Share API 미지원 시
+                    downloadDirectly();
+                }
+            } catch (error) {
+                console.error('다운로드 오류:', error);
+                downloadDirectly();
+            }
+        }
+
+        // 직접 다운로드
+        function downloadDirectly() {
+            const link = document.createElement('a');
+            link.download = `131조회계보고서_${currentYear}년${currentMonth}월.png`;
+            link.href = currentImageData;
+            link.click();
+            
+            // 모바일에서는 다운로드 후 안내 메시지
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (isMobile) {
+                setTimeout(() => {
+                    alert('이미지가 다운로드되었습니다.\n다운로드 폴더 또는 갤러리에서 확인하세요.');
+                }, 500);
+            }
+            
+            closePreview();
+        }
+
+        // 미리보기 닫기
+        window.closePreview = function() {
+            document.getElementById('imagePreviewModal').classList.remove('active');
+            currentImageData = null;
+        }
+
+        // 모달 외부 클릭시 닫기
+        document.getElementById('transactionModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        document.getElementById('reportModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeReport();
+            }
+        });
+
+        document.getElementById('imagePreviewModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePreview();
+            }
+        });
+
+        // 페이지 로드 시 Firebase 초기화
+        initFirebase();
+    </script>
+</body>
+</html>
